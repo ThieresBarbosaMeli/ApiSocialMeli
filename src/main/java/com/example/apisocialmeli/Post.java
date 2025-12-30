@@ -1,3 +1,5 @@
+package com.example.apisocialmeli;
+
 import java.time.LocalDate;
 
 public class Post {
@@ -38,5 +40,25 @@ public class Post {
 
     public LocalDate getDate() {
         return date;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public String getProductType() {
+        return productType;
+    }
+
+    public String getProductBrand() {
+        return productBrand;
+    }
+
+    public String getProductColor() {
+        return productColor;
+    }
+
+    public String getNotes() {
+        return notes;
     }
 }

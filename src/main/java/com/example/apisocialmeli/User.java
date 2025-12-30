@@ -1,3 +1,5 @@
+package com.example.apisocialmeli;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -5,8 +7,8 @@ public class User {
     private int id;
     private String name;
     private String email;
-    private Set<Integer> following; // IDs de usuários que este user segue
-    private Set<Integer> followers; // IDs de usuários que seguem este user
+    private Set<Integer> following;
+    private Set<Integer> followers;
 
     public User(int id, String name, String email) {
         this.id = id;
@@ -42,8 +44,8 @@ public class User {
 
     public void removeFollowing(int userIdUnfollow) {
         following.remove(userIdUnfollow);
-
     }
+
     public void addFollower(int followerId) {
         followers.add(followerId);
     }
@@ -52,5 +54,3 @@ public class User {
         followers.remove(followerId);
     }
 }
-
-
