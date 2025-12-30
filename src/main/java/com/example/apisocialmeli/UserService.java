@@ -2,8 +2,8 @@ package com.example.apisocialmeli;
 
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -79,5 +79,13 @@ public class UserService {
             return user.getFollowing();
         }
         return Collections.emptySet();
+    }
+
+    public User getUserById(int userId) {
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new UserNotFoundException("Usuário não encontrado: " + userId);
+        }
+        return user;
     }
 }

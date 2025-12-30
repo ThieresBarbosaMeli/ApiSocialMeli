@@ -1,12 +1,17 @@
 package com.example.apisocialmeli;
 
+import com.example.apisocialmeli.dto.FollowedDTO;
+import com.example.apisocialmeli.dto.FollowedListResponseDTO;
+import com.example.apisocialmeli.dto.FollowerDTO;
+import com.example.apisocialmeli.dto.FollowersCountResponseDTO;
+import com.example.apisocialmeli.dto.FollowersListResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
@@ -39,29 +44,91 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/followers/count")
-    public ResponseEntity<Integer> getFollowersCount(@PathVariable int userId) {
-        int count = userService.getFollowerCount(userId);
-        return ResponseEntity.ok(count);
+    public ResponseEntity<FollowersCountResponseDTO> getFollowersCount(@PathVariable int userId) {
+        User user = userService.getUserById(userId);
+        int count = user.getFollowers().size();
+
+        FollowersCountResponseDTO response =
+                new FollowersCountResponseDTO(user.getId(), user.getName(), count);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}/followers/list")
-    public ResponseEntity<List<UserSummaryDTO>> getFollowers(@PathVariable int userId) {
-        Set<Integer> followerIds = userService.getFollowers(userId);
-        List<UserSummaryDTO> body = followerIds.stream()
-                .map(UserSummaryDTO::new)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(body);
+    public ResponseEntity<FollowersListResponseDTO> getFollowers(@PathVariable int userId,
+                                                                 @RequestParam(required = false, defaultValue = "") String order) {
+        validateNameOrder(order);
+
+        User user = userService.getUserById(userId);
+        Set<Integer> followerIds = user.getFollowers();
+
+        List<FollowerDTO> followers = followerIds.stream()
+                .map(userService::getUserById)
+                .map(follower -> new FollowerDTO(follower.getId(), follower.getName()))
+                .toList();
+
+        followers = sortFollowersByName(followers, order);
+
+        FollowersListResponseDTO response = new FollowersListResponseDTO(
+                user.getId(),
+                user.getName(),
+                followers
+        );
+
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{userId}/following/list")
-    public ResponseEntity<List<UserSummaryDTO>> getFollowing(@PathVariable int userId) {
-        Set<Integer> followingIds = userService.getFollowing(userId);
-        List<UserSummaryDTO> body = followingIds.stream()
-                .map(UserSummaryDTO::new)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(body);
+    @GetMapping("/{userId}/followed/list")
+    public ResponseEntity<FollowedListResponseDTO> getFollowing(@PathVariable int userId,
+                                                                @RequestParam(required = false, defaultValue = "") String order) {
+        validateNameOrder(order);
+
+        User user = userService.getUserById(userId);
+        Set<Integer> followingIds = user.getFollowing();
+
+        List<FollowedDTO> followed = followingIds.stream()
+                .map(userService::getUserById)
+                .map(followedUser -> new FollowedDTO(followedUser.getId(), followedUser.getName()))
+                .toList();
+
+        followed = sortFollowedByName(followed, order);
+
+        FollowedListResponseDTO response = new FollowedListResponseDTO(
+                user.getId(),
+                user.getName(),
+                followed
+        );
+
+        return ResponseEntity.ok(response);
     }
 
+    private void validateNameOrder(String order) {
+        if (order.isEmpty()) return;
+
+        if (!order.equalsIgnoreCase("name_asc") && !order.equalsIgnoreCase("name_desc")) {
+            throw new IllegalArgumentException("Parâmetro 'order' inválido. Use name_asc ou name_desc.");
+        }
+    }
+
+    private List<FollowerDTO> sortFollowersByName(List<FollowerDTO> followers, String order) {
+        if (order.isEmpty()) return followers;
+
+        return followers.stream()
+                .sorted(order.equalsIgnoreCase("name_asc")
+                        ? Comparator.comparing(FollowerDTO::getUserName)
+                        : Comparator.comparing(FollowerDTO::getUserName).reversed())
+                .toList();
+    }
+
+    private List<FollowedDTO> sortFollowedByName(List<FollowedDTO> followed, String order) {
+        if (order.isEmpty()) return followed;
+
+        return followed.stream()
+                .sorted(order.equalsIgnoreCase("name_asc")
+                        ? Comparator.comparing(FollowedDTO::getUserName)
+                        : Comparator.comparing(FollowedDTO::getUserName).reversed())
+                .toList();
+    }
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex) {

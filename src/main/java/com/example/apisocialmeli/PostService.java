@@ -3,11 +3,11 @@ package com.example.apisocialmeli;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class PostService {
@@ -23,12 +23,13 @@ public class PostService {
     public void createPost(int id,
                            int userId,
                            LocalDate date,
-                           String productName,
-                           String productType,
-                           String productBrand,
-                           String productColor,
-                           String notes) {
-        Post post = new Post(id, userId, date, productName, productType, productBrand, productColor, notes);
+                           Product product,
+                           int category,
+                           double price,
+                           boolean hasPromo,
+                           Double discount) {
+
+        Post post = new Post(id, userId, date, product, category, price, hasPromo, discount);
         postRepository.save(post);
     }
 
@@ -45,7 +46,7 @@ public class PostService {
         return result;
     }
 
-    public List<Post> getFeedForUser(int userId) {
+    public List<Post> getFeedForUser(int userId, String order) {
         Set<Integer> following = userService.getFollowing(userId);
 
         if (following.isEmpty()) {
@@ -58,16 +59,23 @@ public class PostService {
         LocalDate twoWeeksAgo = LocalDate.now().minusWeeks(2);
 
         for (Post post : allPosts) {
-            if (following.contains(post.getUserId())) {
-                // inclui posts com data >= twoWeeksAgo
-                if (!post.getDate().isBefore(twoWeeksAgo)) {
-                    result.add(post);
-                }
+            if (following.contains(post.getUserId()) && !post.getDate().isBefore(twoWeeksAgo)) {
+                result.add(post);
             }
         }
 
-        result.sort(Comparator.comparing(Post::getDate).reversed());
+        Comparator<Post> comparator = Comparator.comparing(Post::getDate);
+        if (!order.equalsIgnoreCase("date_asc")) {
+            comparator = comparator.reversed(); // padrão: decrescente
+        }
 
+        result.sort(comparator);
         return result;
+    }
+
+    public int countPromoPostsByUser(int userId) {
+        return (int) postRepository.findAll().stream()
+                .filter(post -> post.getUserId() == userId && post.isHasPromo())
+                .count();
     }
 }

@@ -3,31 +3,32 @@ package com.example.apisocialmeli;
 import java.time.LocalDate;
 
 public class Post {
+
     private int id;
     private int userId;
     private LocalDate date;
-    private String productName;
-    private String productType;
-    private String productBrand;
-    private String productColor;
-    private String notes;
+    private Product product;
+    private int category;
+    private double price;
+    private boolean hasPromo;
+    private Double discount;
 
     public Post(int id,
                 int userId,
                 LocalDate date,
-                String productName,
-                String productType,
-                String productBrand,
-                String productColor,
-                String notes) {
+                Product product,
+                int category,
+                double price,
+                boolean hasPromo,
+                Double discount) {
         this.id = id;
         this.userId = userId;
         this.date = date;
-        this.productName = productName;
-        this.productType = productType;
-        this.productBrand = productBrand;
-        this.productColor = productColor;
-        this.notes = notes;
+        this.product = product;
+        this.category = category;
+        this.price = price;
+        this.hasPromo = hasPromo;
+        this.discount = discount;
     }
 
     public int getId() {
@@ -42,23 +43,23 @@ public class Post {
         return date;
     }
 
-    public String getProductName() {
-        return productName;
+    public Product getProduct() {
+        return product;
     }
 
-    public String getProductType() {
-        return productType;
+    public int getCategory() {
+        return category;
     }
 
-    public String getProductBrand() {
-        return productBrand;
+    public double getPrice() {
+        return price;
     }
 
-    public String getProductColor() {
-        return productColor;
+    public boolean isHasPromo() {
+        return hasPromo;
     }
 
-    public String getNotes() {
-        return notes;
+    public Double getDiscount() {
+        return discount;
     }
 }

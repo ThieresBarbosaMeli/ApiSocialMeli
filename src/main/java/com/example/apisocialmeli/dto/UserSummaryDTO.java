@@ -1,4 +1,4 @@
-package com.example.apisocialmeli;
+package com.example.apisocialmeli.dto;
 
 public class UserSummaryDTO {
 
