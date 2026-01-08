@@ -78,4 +78,10 @@ public class PostService {
                 .filter(post -> post.getUserId() == userId && post.isHasPromo())
                 .count();
     }
+
+    public List<Post> getPromoPostsByUser(int userId) {
+        return postRepository.findAll().stream()
+                .filter(post -> post.getUserId() == userId && post.isHasPromo())
+                .toList();
+    }
 }

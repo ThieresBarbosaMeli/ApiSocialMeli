@@ -2,18 +2,26 @@ package com.example.apisocialmeli.dto;
 
 import com.example.apisocialmeli.Post;
 import com.example.apisocialmeli.Product;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
 
 public class PostResponseDTO {
 
+    @JsonProperty("user_id")
     private int userId;
+
+    @JsonProperty("post_id")
     private int postId;
+
     private LocalDate date;
     private ProductDTO product;
     private int category;
     private double price;
+
+    @JsonProperty("has_promo")
     private boolean hasPromo;
+
     private Double discount;
 
     public PostResponseDTO(Post post) {
@@ -60,8 +68,13 @@ public class PostResponseDTO {
     }
 
     public static class ProductDTO {
+
+        @JsonProperty("product_id")
         private int productId;
+
+        @JsonProperty("product_name")
         private String productName;
+
         private String type;
         private String brand;
         private String color;

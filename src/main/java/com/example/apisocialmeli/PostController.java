@@ -1,15 +1,24 @@
 package com.example.apisocialmeli;
 
+import com.example.apisocialmeli.dto.FollowedPostsResponseDTO;
 import com.example.apisocialmeli.dto.PostResponseDTO;
 import com.example.apisocialmeli.dto.PromoCountResponseDTO;
+import com.example.apisocialmeli.dto.PromoPostListResponseDTO;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/posts")
@@ -54,29 +63,69 @@ public class PostController {
         @DecimalMax(value = "1.0", message = "O desconto não pode ser maior que 1.0")
         private Double discount;
 
-        public int getId() { return id; }
-        public void setId(int id) { this.id = id; }
+        public int getId() {
+            return id;
+        }
 
-        public int getUserId() { return userId; }
-        public void setUserId(int userId) { this.userId = userId; }
+        public int getUserId() {
+            return userId;
+        }
 
-        public String getDate() { return date; }
-        public void setDate(String date) { this.date = date; }
+        public String getDate() {
+            return date;
+        }
 
-        public ProductRequest getProduct() { return product; }
-        public void setProduct(ProductRequest product) { this.product = product; }
+        public ProductRequest getProduct() {
+            return product;
+        }
 
-        public int getCategory() { return category; }
-        public void setCategory(int category) { this.category = category; }
+        public int getCategory() {
+            return category;
+        }
 
-        public double getPrice() { return price; }
-        public void setPrice(double price) { this.price = price; }
+        public double getPrice() {
+            return price;
+        }
 
-        public Boolean getHasPromo() { return hasPromo; }
-        public void setHasPromo(Boolean hasPromo) { this.hasPromo = hasPromo; }
+        public Boolean getHasPromo() {
+            return hasPromo;
+        }
 
-        public Double getDiscount() { return discount; }
-        public void setDiscount(Double discount) { this.discount = discount; }
+        public Double getDiscount() {
+            return discount;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public void setUserId(int userId) {
+            this.userId = userId;
+        }
+
+        public void setDate(String date) {
+            this.date = date;
+        }
+
+        public void setProduct(ProductRequest product) {
+            this.product = product;
+        }
+
+        public void setCategory(int category) {
+            this.category = category;
+        }
+
+        public void setPrice(double price) {
+            this.price = price;
+        }
+
+        public void setHasPromo(Boolean hasPromo) {
+            this.hasPromo = hasPromo;
+        }
+
+        public void setDiscount(Double discount) {
+            this.discount = discount;
+        }
     }
 
     public static class ProductRequest {
@@ -108,23 +157,53 @@ public class PostController {
         @Pattern(regexp = "[\\p{L}\\d ]*", message = "notes não pode conter caracteres especiais")
         private String notes;
 
-        public int getProductId() { return productId; }
-        public void setProductId(int productId) { this.productId = productId; }
+        public int getProductId() {
+            return productId;
+        }
 
-        public String getProductName() { return productName; }
-        public void setProductName(String productName) { this.productName = productName; }
+        public String getProductName() {
+            return productName;
+        }
 
-        public String getType() { return type; }
-        public void setType(String type) { this.type = type; }
+        public String getType() {
+            return type;
+        }
 
-        public String getBrand() { return brand; }
-        public void setBrand(String brand) { this.brand = brand; }
+        public String getBrand() {
+            return brand;
+        }
 
-        public String getColor() { return color; }
-        public void setColor(String color) { this.color = color; }
+        public String getColor() {
+            return color;
+        }
 
-        public String getNotes() { return notes; }
-        public void setNotes(String notes) { this.notes = notes; }
+        public String getNotes() {
+            return notes;
+        }
+
+        public void setProductId(int productId) {
+            this.productId = productId;
+        }
+
+        public void setProductName(String productName) {
+            this.productName = productName;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public void setBrand(String brand) {
+            this.brand = brand;
+        }
+
+        public void setColor(String color) {
+            this.color = color;
+        }
+
+        public void setNotes(String notes) {
+            this.notes = notes;
+        }
     }
 
     @PostMapping("/publish")
@@ -133,29 +212,56 @@ public class PostController {
         Double discount = hasPromo ? request.getDiscount() : null;
 
         if (!hasPromo && request.getDiscount() != null) {
-            throw new IllegalArgumentException("Desconto só pode ser informado quando has_promo = true.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Desconto só pode ser informado quando has_promo = true.");
         }
 
         registerPost(request, hasPromo, discount);
     }
 
-    @PostMapping("/promo-pub")
+    @PostMapping("/promo-publish")
     public void createPromoPost(@Valid @RequestBody CreatePostRequest request) {
         if (request.getDiscount() == null) {
-            throw new IllegalArgumentException("Produtos em promoção devem informar o campo discount.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Produtos em promoção devem informar o campo discount.");
         }
 
         registerPost(request, true, request.getDiscount());
     }
 
-    @GetMapping("/promo-pub/count")
+    @GetMapping("/promo-publish/count")
     public PromoCountResponseDTO getPromoCount(@RequestParam("user_id") int userId) {
         User user = userService.getUserById(userId);
         int count = postService.countPromoPostsByUser(userId);
         return new PromoCountResponseDTO(user.getId(), user.getName(), count);
     }
 
+    @GetMapping("/promo-publish/list")
+    public PromoPostListResponseDTO getPromoPosts(@RequestParam("user_id") int userId) {
+        User user = userService.getUserById(userId);
+        List<PostResponseDTO> posts = postService.getPromoPostsByUser(userId).stream()
+                .map(PostResponseDTO::new)
+                .toList();
+
+        return new PromoPostListResponseDTO(user.getId(), user.getName(), posts);
+    }
+
+    @GetMapping("/products/followed/{userId}/list")
+    public FollowedPostsResponseDTO getFollowedPosts(@PathVariable int userId,
+                                                     @RequestParam(required = false, defaultValue = "") String order) {
+        validateDateOrder(order);
+        userService.getUserById(userId);
+
+        List<PostResponseDTO> posts = postService.getFeedForUser(userId, order).stream()
+                .map(PostResponseDTO::new)
+                .toList();
+
+        return new FollowedPostsResponseDTO(userId, posts);
+    }
+
     private void registerPost(CreatePostRequest request, boolean hasPromo, Double discount) {
+        userService.getUserById(request.getUserId()); // valida usuário
+
         LocalDate date = LocalDate.parse(request.getDate(), DATE_FORMATTER);
 
         Product product = new Product(
@@ -179,21 +285,12 @@ public class PostController {
         );
     }
 
-    @GetMapping("/followed/{userId}/list")
-    public List<PostResponseDTO> getFeed(@PathVariable int userId,
-                                         @RequestParam(required = false, defaultValue = "") String order) {
-        validateDateOrder(order);
-
-        return postService.getFeedForUser(userId, order).stream()
-                .map(PostResponseDTO::new)
-                .collect(Collectors.toList());
-    }
-
     private void validateDateOrder(String order) {
         if (order.isEmpty()) return;
 
         if (!order.equalsIgnoreCase("date_asc") && !order.equalsIgnoreCase("date_desc")) {
-            throw new IllegalArgumentException("Parâmetro 'order' inválido. Use date_asc ou date_desc.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Parâmetro 'order' inválido. Use date_asc ou date_desc.");
         }
     }
 }

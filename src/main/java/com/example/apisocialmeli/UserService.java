@@ -1,8 +1,9 @@
 package com.example.apisocialmeli;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
 import java.util.Set;
 
 @Service
@@ -14,24 +15,49 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public void register(int id, String name, String email) {
-        User user = new User(id, name, email);
+    public void register(int id, String name, String email, String password) {
+        if (userRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Já existe um usuário com o id " + id);
+        }
+        User user = new User(id, name, email, password);
         userRepository.save(user);
+    }
+
+    public void updateProfile(int userId, String name, String email) {
+        User user = getUserById(userId);
+        user.setName(name);
+        user.setEmail(email);
+        userRepository.save(user);
+    }
+
+    public void updatePassword(int userId, String newPassword) {
+        User user = getUserById(userId);
+        user.setPassword(newPassword);
+        userRepository.save(user);
+    }
+
+    public void deleteUser(int userId) {
+        User user = getUserById(userId);
+        userRepository.findAll().forEach(otherUser -> {
+            otherUser.getFollowers().remove(userId);
+            otherUser.getFollowing().remove(userId);
+        });
+        userRepository.delete(userId);
     }
 
     public void follow(int userId, int userIdToFollow) {
         if (userId == userIdToFollow) {
-            throw new IllegalArgumentException("Um usuário não pode seguir a si mesmo.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Um usuário não pode seguir a si mesmo.");
         }
 
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new UserNotFoundException("Usuário seguidor não encontrado: " + userId);
-        }
+        User user = getUserById(userId);
+        User userToFollow = getUserById(userIdToFollow);
 
-        User userToFollow = userRepository.findById(userIdToFollow);
-        if (userToFollow == null) {
-            throw new UserNotFoundException("Usuário a ser seguido não encontrado: " + userIdToFollow);
+        if (user.getFollowing().contains(userIdToFollow)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "O usuário " + userId + " já segue " + userIdToFollow + ".");
         }
 
         user.addFollowing(userIdToFollow);
@@ -40,17 +66,16 @@ public class UserService {
 
     public void unfollow(int userId, int userIdToUnfollow) {
         if (userId == userIdToUnfollow) {
-            throw new IllegalArgumentException("Um usuário não pode deixar de seguir a si mesmo.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Um usuário não pode deixar de seguir a si mesmo.");
         }
 
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new UserNotFoundException("Usuário seguidor não encontrado: " + userId);
-        }
+        User user = getUserById(userId);
+        User userToUnfollow = getUserById(userIdToUnfollow);
 
-        User userToUnfollow = userRepository.findById(userIdToUnfollow);
-        if (userToUnfollow == null) {
-            throw new UserNotFoundException("Usuário a ser deixado de seguir não encontrado: " + userIdToUnfollow);
+        if (!user.getFollowing().contains(userIdToUnfollow)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "O usuário " + userId + " não segue " + userIdToUnfollow + ".");
         }
 
         user.removeFollowing(userIdToUnfollow);
@@ -58,33 +83,22 @@ public class UserService {
     }
 
     public int getFollowerCount(int userId) {
-        User user = userRepository.findById(userId);
-        if (user != null) {
-            return user.getFollowers().size();
-        }
-        return 0;
+        return getUserById(userId).getFollowers().size();
     }
 
     public Set<Integer> getFollowers(int userId) {
-        User user = userRepository.findById(userId);
-        if (user != null) {
-            return user.getFollowers();
-        }
-        return Collections.emptySet();
+        return getUserById(userId).getFollowers();
     }
 
     public Set<Integer> getFollowing(int userId) {
-        User user = userRepository.findById(userId);
-        if (user != null) {
-            return user.getFollowing();
-        }
-        return Collections.emptySet();
+        return getUserById(userId).getFollowing();
     }
 
     public User getUserById(int userId) {
         User user = userRepository.findById(userId);
         if (user == null) {
-            throw new UserNotFoundException("Usuário não encontrado: " + userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Usuário não encontrado: " + userId);
         }
         return user;
     }

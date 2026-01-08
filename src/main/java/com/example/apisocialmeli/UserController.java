@@ -5,9 +5,13 @@ import com.example.apisocialmeli.dto.FollowedListResponseDTO;
 import com.example.apisocialmeli.dto.FollowerDTO;
 import com.example.apisocialmeli.dto.FollowersCountResponseDTO;
 import com.example.apisocialmeli.dto.FollowersListResponseDTO;
+import com.example.apisocialmeli.dto.UpdatePasswordRequest;
+import com.example.apisocialmeli.dto.UpdateUserProfileRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,8 +29,33 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<Void> registerUser(@RequestBody CreateUserRequest request) {
-        userService.register(request.getId(), request.getName(), request.getEmail());
+        userService.register(
+                request.getId(),
+                request.getName(),
+                request.getEmail(),
+                request.getPassword()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<Void> updateProfile(@PathVariable int userId,
+                                              @Valid @RequestBody UpdateUserProfileRequest request) {
+        userService.updateProfile(userId, request.getName(), request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{userId}/password")
+    public ResponseEntity<Void> updatePassword(@PathVariable int userId,
+                                               @Valid @RequestBody UpdatePasswordRequest request) {
+        userService.updatePassword(userId, request.getPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable int userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{userId}/follow/{userIdToFollow}")
@@ -106,7 +135,8 @@ public class UserController {
         if (order.isEmpty()) return;
 
         if (!order.equalsIgnoreCase("name_asc") && !order.equalsIgnoreCase("name_desc")) {
-            throw new IllegalArgumentException("Parâmetro 'order' inválido. Use name_asc ou name_desc.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Parâmetro 'order' inválido. Use name_asc ou name_desc.");
         }
     }
 
@@ -128,15 +158,5 @@ public class UserController {
                         ? Comparator.comparing(FollowedDTO::getUserName)
                         : Comparator.comparing(FollowedDTO::getUserName).reversed())
                 .toList();
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
     }
 }

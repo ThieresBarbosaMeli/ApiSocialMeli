@@ -2,13 +2,14 @@ package com.example.apisocialmeli;
 
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 @Repository
 public class UserRepository {
 
-    private Map<Integer, User> users = new HashMap<>();
+    private final Map<Integer, User> users = new HashMap<>();
 
     public void save(User user) {
         users.put(user.getId(), user);
@@ -20,5 +21,13 @@ public class UserRepository {
 
     public boolean existsById(int id) {
         return users.containsKey(id);
+    }
+
+    public Collection<User> findAll() {
+        return users.values();
+    }
+
+    public void delete(int id) {
+        users.remove(id);
     }
 }
