@@ -8,8 +8,10 @@ import com.example.apisocialmeli.dto.FollowersListResponseDTO;
 import com.example.apisocialmeli.dto.UpdatePasswordRequest;
 import com.example.apisocialmeli.dto.UpdateUserProfileRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,6 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+@Validated
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -28,7 +31,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> registerUser(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<Void> registerUser(@Valid @RequestBody CreateUserRequest request) {
         userService.register(
                 request.getId(),
                 request.getName(),
@@ -39,41 +42,44 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<Void> updateProfile(@PathVariable int userId,
+    public ResponseEntity<Void> updateProfile(@PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
                                               @Valid @RequestBody UpdateUserProfileRequest request) {
         userService.updateProfile(userId, request.getName(), request.getEmail());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{userId}/password")
-    public ResponseEntity<Void> updatePassword(@PathVariable int userId,
+    public ResponseEntity<Void> updatePassword(@PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
                                                @Valid @RequestBody UpdatePasswordRequest request) {
         userService.updatePassword(userId, request.getPassword());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable @Positive(message = "userId deve ser maior que zero") int userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{userId}/follow/{userIdToFollow}")
-    public ResponseEntity<Void> followUser(@PathVariable int userId,
-                                           @PathVariable int userIdToFollow) {
+    public ResponseEntity<Void> followUser(
+            @PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
+            @PathVariable @Positive(message = "userIdToFollow deve ser maior que zero") int userIdToFollow) {
         userService.follow(userId, userIdToFollow);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{userId}/unfollow/{userIdToUnfollow}")
-    public ResponseEntity<Void> unfollowUser(@PathVariable int userId,
-                                             @PathVariable int userIdToUnfollow) {
+    public ResponseEntity<Void> unfollowUser(
+            @PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
+            @PathVariable @Positive(message = "userIdToUnfollow deve ser maior que zero") int userIdToUnfollow) {
         userService.unfollow(userId, userIdToUnfollow);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{userId}/followers/count")
-    public ResponseEntity<FollowersCountResponseDTO> getFollowersCount(@PathVariable int userId) {
+    public ResponseEntity<FollowersCountResponseDTO> getFollowersCount(
+            @PathVariable @Positive(message = "userId deve ser maior que zero") int userId) {
         User user = userService.getUserById(userId);
         int count = user.getFollowers().size();
 
@@ -84,8 +90,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/followers/list")
-    public ResponseEntity<FollowersListResponseDTO> getFollowers(@PathVariable int userId,
-                                                                 @RequestParam(required = false, defaultValue = "") String order) {
+    public ResponseEntity<FollowersListResponseDTO> getFollowers(
+            @PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
+            @RequestParam(required = false, defaultValue = "") String order) {
         validateNameOrder(order);
 
         User user = userService.getUserById(userId);
@@ -108,8 +115,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/followed/list")
-    public ResponseEntity<FollowedListResponseDTO> getFollowing(@PathVariable int userId,
-                                                                @RequestParam(required = false, defaultValue = "") String order) {
+    public ResponseEntity<FollowedListResponseDTO> getFollowing(
+            @PathVariable @Positive(message = "userId deve ser maior que zero") int userId,
+            @RequestParam(required = false, defaultValue = "") String order) {
         validateNameOrder(order);
 
         User user = userService.getUserById(userId);

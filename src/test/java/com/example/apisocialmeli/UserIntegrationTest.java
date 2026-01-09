@@ -149,4 +149,46 @@ class UserIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.followersCount").value(0));
     }
+
+    @Test
+    void shouldRejectInvalidOrderInFollowersList_T0003() throws Exception {
+        mockMvc.perform(get("/users/1/followers/list")
+                        .param("order", "invalid"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectInvalidOrderInFollowedList_T0003() throws Exception {
+        mockMvc.perform(get("/users/1/followed/list")
+                        .param("order", "invalid"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectRegistrationWithNonPositiveId() throws Exception {
+        CreateUserRequest invalidId = new CreateUserRequest();
+        invalidId.setId(0);
+        invalidId.setName("Novo Usuario");
+        invalidId.setEmail("novo@test.com");
+        invalidId.setPassword("123456");
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidId)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectRegistrationWithInvalidName() throws Exception {
+        CreateUserRequest invalidName = new CreateUserRequest();
+        invalidName.setId(10);
+        invalidName.setName("Nome+Invalido@!");
+        invalidName.setEmail("invalidname@test.com");
+        invalidName.setPassword("123456");
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidName)))
+                .andExpect(status().isBadRequest());
+    }
 }

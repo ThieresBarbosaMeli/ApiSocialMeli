@@ -2,12 +2,14 @@ package com.example.apisocialmeli;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class PostServiceTest {
@@ -118,6 +120,16 @@ class PostServiceTest {
         var promoPosts = postService.getPromoPostsByUser(10);
         assertEquals(1, promoPosts.size());
         assertEquals(1, promoPosts.get(0).getId());
+    }
+
+    @Test
+    void getFeedShouldThrowWhenOrderIsInvalid_T0005() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> postService.getFeedForUser(1, "invalid_order")
+        );
+
+        assertEquals("Parâmetro 'order' inválido. Use date_asc ou date_desc.", ex.getReason());
     }
 
     private Product dummyProduct() {

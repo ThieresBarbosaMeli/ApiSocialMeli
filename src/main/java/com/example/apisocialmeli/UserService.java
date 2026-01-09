@@ -16,6 +16,11 @@ public class UserService {
     }
 
     public void register(int id, String name, String email, String password) {
+        if (id <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "O id do usuário deve ser maior que zero.");
+        }
+
         if (userRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Já existe um usuário com o id " + id);
@@ -97,7 +102,7 @@ public class UserService {
     public User getUserById(int userId) {
         User user = userRepository.findById(userId);
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Usuário não encontrado: " + userId);
         }
         return user;

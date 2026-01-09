@@ -1,6 +1,8 @@
 package com.example.apisocialmeli;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -47,8 +49,9 @@ public class PostService {
     }
 
     public List<Post> getFeedForUser(int userId, String order) {
-        Set<Integer> following = userService.getFollowing(userId);
+        Comparator<Post> comparator = resolveDateOrder(order);
 
+        Set<Integer> following = userService.getFollowing(userId);
         if (following.isEmpty()) {
             return Collections.emptyList();
         }
@@ -62,11 +65,6 @@ public class PostService {
             if (following.contains(post.getUserId()) && !post.getDate().isBefore(twoWeeksAgo)) {
                 result.add(post);
             }
-        }
-
-        Comparator<Post> comparator = Comparator.comparing(Post::getDate);
-        if (!order.equalsIgnoreCase("date_asc")) {
-            comparator = comparator.reversed(); // padrão: decrescente
         }
 
         result.sort(comparator);
@@ -83,5 +81,16 @@ public class PostService {
         return postRepository.findAll().stream()
                 .filter(post -> post.getUserId() == userId && post.isHasPromo())
                 .toList();
+    }
+
+    private Comparator<Post> resolveDateOrder(String order) {
+        String normalized = order == null ? "" : order.trim().toLowerCase();
+
+        return switch (normalized) {
+            case "", "date_desc" -> Comparator.comparing(Post::getDate).reversed();
+            case "date_asc" -> Comparator.comparing(Post::getDate);
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Parâmetro 'order' inválido. Use date_asc ou date_desc.");
+        };
     }
 }

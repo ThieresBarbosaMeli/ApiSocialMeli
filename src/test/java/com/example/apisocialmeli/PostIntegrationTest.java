@@ -34,20 +34,20 @@ class PostIntegrationTest {
     private String publishPayload(int postId, int userId, LocalDate date, boolean hasPromo, Double discount) {
         return """
                 {
-                  "id": %d,
-                  "userId": %d,
+                  "post_id": %d,
+                  "user_id": %d,
                   "date": "%s",
                   "product": {
-                    "productId": 10,
-                    "productName": "Mouse Gamer",
-                    "type": "Periférico",
+                    "product_id": 10,
+                    "product_name": "Mouse Gamer",
+                    "type": "Periferico",
                     "brand": "Logi",
                     "color": "Preto",
                     "notes": "RGB"
                   },
                   "category": 100,
                   "price": 250.0,
-                  "hasPromo": %s,
+                  "has_promo": %s,
                   "discount": %s
                 }
                 """.formatted(
@@ -86,12 +86,12 @@ class PostIntegrationTest {
 
     @Test
     void shouldPublishPostAndGetFeed_US0005_US0006_US0009() throws Exception {
-        mockMvc.perform(post("/posts/publish")
+        mockMvc.perform(post("/products/publish")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(publishPayload(1, 10, LocalDate.now(), false, null)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/posts/products/followed/20/list")
+        mockMvc.perform(get("/products/followed/20/list")
                         .param("order", "date_desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user_id").value(20))
@@ -102,15 +102,15 @@ class PostIntegrationTest {
 
     @Test
     void shouldReturnOnlyLastTwoWeeksInFeed_US0006() throws Exception {
-        mockMvc.perform(post("/posts/publish")
+        mockMvc.perform(post("/products/publish")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(publishPayload(1, 10, LocalDate.now().minusDays(1), false, null)));
 
-        mockMvc.perform(post("/posts/publish")
+        mockMvc.perform(post("/products/publish")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(publishPayload(2, 10, LocalDate.now().minusDays(20), false, null)));
 
-        mockMvc.perform(get("/posts/products/followed/20/list"))
+        mockMvc.perform(get("/products/followed/20/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.posts.length()").value(1))
                 .andExpect(jsonPath("$.posts[0].post_id").value(1));
@@ -118,15 +118,15 @@ class PostIntegrationTest {
 
     @Test
     void shouldRespectDateAscendingOrder_US0009() throws Exception {
-        mockMvc.perform(post("/posts/publish")
+        mockMvc.perform(post("/products/publish")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(publishPayload(1, 10, LocalDate.now().minusDays(1), false, null)));
 
-        mockMvc.perform(post("/posts/publish")
+        mockMvc.perform(post("/products/publish")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(publishPayload(2, 10, LocalDate.now(), false, null)));
 
-        mockMvc.perform(get("/posts/products/followed/20/list")
+        mockMvc.perform(get("/products/followed/20/list")
                         .param("order", "date_asc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.posts[0].post_id").value(1))
@@ -135,12 +135,12 @@ class PostIntegrationTest {
 
     @Test
     void shouldPublishPromoAndGetPromoCount_US0010_US0011() throws Exception {
-        mockMvc.perform(post("/posts/promo-publish")
+        mockMvc.perform(post("/products/promo-pub")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(publishPayload(1, 10, LocalDate.now(), true, 0.2)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/posts/promo-publish/count")
+        mockMvc.perform(get("/products/promo-pub/count")
                         .param("user_id", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.promoProductsCount").value(1));
@@ -148,15 +148,30 @@ class PostIntegrationTest {
 
     @Test
     void shouldListPromoPosts_US0012() throws Exception {
-        mockMvc.perform(post("/posts/promo-publish")
+        mockMvc.perform(post("/products/promo-pub")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(publishPayload(1, 10, LocalDate.now(), true, 0.15)));
 
-        mockMvc.perform(get("/posts/promo-publish/list")
+        mockMvc.perform(get("/products/promo-pub/list")
                         .param("user_id", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.posts.length()").value(1))
                 .andExpect(jsonPath("$.posts[0].has_promo").value(true))
                 .andExpect(jsonPath("$.posts[0].discount").value(0.15));
+    }
+
+    @Test
+    void shouldRejectPromoPublishWithoutDiscount_T0010() throws Exception {
+        mockMvc.perform(post("/products/publish")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(publishPayload(999, 10, LocalDate.now(), true, null)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectInvalidOrderInFeed_T0005() throws Exception {
+        mockMvc.perform(get("/products/followed/20/list")
+                        .param("order", "invalid"))
+                .andExpect(status().isBadRequest());
     }
 }

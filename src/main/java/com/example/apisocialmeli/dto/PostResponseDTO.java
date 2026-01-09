@@ -4,9 +4,11 @@ import com.example.apisocialmeli.Post;
 import com.example.apisocialmeli.Product;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class PostResponseDTO {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     @JsonProperty("user_id")
     private int userId;
@@ -14,7 +16,7 @@ public class PostResponseDTO {
     @JsonProperty("post_id")
     private int postId;
 
-    private LocalDate date;
+    private String date;
     private ProductDTO product;
     private int category;
     private double price;
@@ -27,7 +29,7 @@ public class PostResponseDTO {
     public PostResponseDTO(Post post) {
         this.userId = post.getUserId();
         this.postId = post.getId();
-        this.date = post.getDate();
+        this.date = post.getDate().format(DATE_FORMATTER);
         this.product = new ProductDTO(post.getProduct());
         this.category = post.getCategory();
         this.price = post.getPrice();
@@ -43,7 +45,7 @@ public class PostResponseDTO {
         return postId;
     }
 
-    public LocalDate getDate() {
+    public String getDate() {
         return date;
     }
 
