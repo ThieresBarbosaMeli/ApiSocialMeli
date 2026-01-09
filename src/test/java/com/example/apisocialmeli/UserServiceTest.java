@@ -1,5 +1,10 @@
 package com.example.apisocialmeli;
 
+import com.example.apisocialmeli.domain.User;
+import com.example.apisocialmeli.repository.InMemoryUserRepository;
+import com.example.apisocialmeli.repository.UserRepository;
+import com.example.apisocialmeli.service.UserService;
+import com.example.apisocialmeli.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,8 +19,8 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userRepository = new UserRepository();
-        userService = new UserService(userRepository);
+        userRepository = new InMemoryUserRepository();
+        userService = new UserServiceImpl(userRepository);
     }
 
     @Test
@@ -97,5 +102,43 @@ class UserServiceTest {
 
         User updated = userRepository.findById(1);
         assertEquals("novaSenha!", updated.getPassword());
+    }
+
+    @Test
+    void registerShouldRejectNonPositiveId() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.register(0, "Nome", "email@test.com", "123456")
+        );
+        assertEquals("O id do usuário deve ser maior que zero.", ex.getReason());
+    }
+
+    @Test
+    void registerShouldRejectDuplicateId() {
+        userService.register(1, "Alice", "alice@test.com", "123456");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.register(1, "Bob", "bob@test.com", "123456")
+        );
+        assertEquals("Já existe um usuário com o id 1", ex.getReason());
+    }
+
+    @Test
+    void whenUserTriesToFollowItself_shouldThrowException() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.follow(1, 1)
+        );
+        assertEquals("Um usuário não pode seguir a si mesmo.", ex.getReason());
+    }
+
+    @Test
+    void whenUserTriesToUnfollowItself_shouldThrowException() {
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userService.unfollow(1, 1)
+        );
+        assertEquals("Um usuário não pode deixar de seguir a si mesmo.", ex.getReason());
     }
 }

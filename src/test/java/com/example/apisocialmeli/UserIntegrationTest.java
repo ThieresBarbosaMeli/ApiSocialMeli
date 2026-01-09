@@ -1,7 +1,8 @@
 package com.example.apisocialmeli;
 
-import com.example.apisocialmeli.dto.UpdatePasswordRequest;
-import com.example.apisocialmeli.dto.UpdateUserProfileRequest;
+import com.example.apisocialmeli.dto.request.CreateUserRequest;
+import com.example.apisocialmeli.dto.request.UpdatePasswordRequest;
+import com.example.apisocialmeli.dto.request.UpdateUserProfileRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

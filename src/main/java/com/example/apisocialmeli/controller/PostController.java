@@ -1,0 +1,134 @@
+package com.example.apisocialmeli.controller;
+
+import com.example.apisocialmeli.domain.Product;
+import com.example.apisocialmeli.domain.User;
+import com.example.apisocialmeli.dto.request.CreatePostRequest;
+import com.example.apisocialmeli.service.PostService;
+import com.example.apisocialmeli.service.UserService;
+import com.example.apisocialmeli.dto.response.FollowedPostsResponseDTO;
+import com.example.apisocialmeli.dto.response.PostResponseDTO;
+import com.example.apisocialmeli.dto.response.PromoCountResponseDTO;
+import com.example.apisocialmeli.dto.response.PromoPostListResponseDTO;
+import com.example.apisocialmeli.mapper.PostMapper;
+import com.example.apisocialmeli.exception.ErrorMessages;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Validated
+@RestController
+@RequestMapping("/products")
+public class PostController {
+
+    private final PostService postService;
+    private final UserService userService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final String INVALID_DATE_ORDER_MESSAGE = ErrorMessages.INVALID_DATE_ORDER;
+
+    public PostController(PostService postService, UserService userService) {
+        this.postService = postService;
+        this.userService = userService;
+    }
+
+    @PostMapping("/publish")
+    public void createPost(@Valid @RequestBody CreatePostRequest request) {
+        boolean hasPromo = Boolean.TRUE.equals(request.getHasPromo());
+        Double discount = hasPromo ? request.getDiscount() : null;
+
+        if (hasPromo && request.getDiscount() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    ErrorMessages.PROMO_REQUIRES_DISCOUNT);
+        }
+
+        if (!hasPromo && request.getDiscount() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    ErrorMessages.DISCOUNT_ONLY_WITH_PROMO);
+        }
+
+        registerPost(request, hasPromo, discount);
+    }
+
+    @PostMapping("/promo-pub")
+    public void createPromoPost(@Valid @RequestBody CreatePostRequest request) {
+        if (request.getDiscount() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    ErrorMessages.PROMO_REQUIRES_DISCOUNT);
+        }
+
+        registerPost(request, true, request.getDiscount());
+    }
+
+    @GetMapping("/promo-pub/count")
+    public PromoCountResponseDTO getPromoCount(
+            @RequestParam("user_id") @Positive(message = ErrorMessages.USER_ID_POSITIVE) int userId) {
+        User user = userService.getUserById(userId);
+        int count = postService.countPromoPostsByUser(userId);
+        return new PromoCountResponseDTO(user.getId(), user.getName(), count);
+    }
+
+    @GetMapping("/promo-pub/list")
+    public PromoPostListResponseDTO getPromoPosts(
+            @RequestParam("user_id") @Positive(message = ErrorMessages.USER_ID_POSITIVE) int userId) {
+        User user = userService.getUserById(userId);
+        List<PostResponseDTO> posts = postService.getPromoPostsByUser(userId).stream()
+                .map(PostMapper::toResponse)
+                .toList();
+
+        return new PromoPostListResponseDTO(user.getId(), user.getName(), posts);
+    }
+
+    @GetMapping("/followed/{userId}/list")
+    public FollowedPostsResponseDTO getFollowedPosts(
+            @PathVariable @Positive(message = ErrorMessages.USER_ID_POSITIVE_PATH) int userId,
+            @RequestParam(required = false, defaultValue = "") String order) {
+        validateDateOrder(order);
+        userService.getUserById(userId);
+
+        List<PostResponseDTO> posts = postService.getFeedForUser(userId, order).stream()
+                .map(PostMapper::toResponse)
+                .toList();
+
+        return new FollowedPostsResponseDTO(userId, posts);
+    }
+
+    private void registerPost(CreatePostRequest request, boolean hasPromo, Double discount) {
+        userService.getUserById(request.getUserId());
+
+        LocalDate date = LocalDate.parse(request.getDate(), DATE_FORMATTER);
+
+        Product product = new Product(
+                request.getProduct().getProductId(),
+                request.getProduct().getProductName(),
+                request.getProduct().getType(),
+                request.getProduct().getBrand(),
+                request.getProduct().getColor(),
+                request.getProduct().getNotes()
+        );
+
+        postService.createPost(
+                request.getPostId(),
+                request.getUserId(),
+                date,
+                product,
+                request.getCategory(),
+                request.getPrice(),
+                hasPromo,
+                discount
+        );
+    }
+
+    private void validateDateOrder(String order) {
+        if (order.isEmpty()) return;
+
+        if (!order.equalsIgnoreCase("date_asc") && !order.equalsIgnoreCase("date_desc")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, INVALID_DATE_ORDER_MESSAGE);
+        }
+    }
+}

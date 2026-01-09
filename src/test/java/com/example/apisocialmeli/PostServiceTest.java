@@ -1,5 +1,12 @@
 package com.example.apisocialmeli;
 
+import com.example.apisocialmeli.domain.Post;
+import com.example.apisocialmeli.domain.Product;
+import com.example.apisocialmeli.repository.InMemoryPostRepository;
+import com.example.apisocialmeli.repository.PostRepository;
+import com.example.apisocialmeli.service.PostService;
+import com.example.apisocialmeli.service.UserService;
+import com.example.apisocialmeli.service.impl.PostServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -10,6 +17,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class PostServiceTest {
@@ -20,9 +28,9 @@ class PostServiceTest {
 
     @BeforeEach
     void setUp() {
-        postRepository = new PostRepository();
+        postRepository = new InMemoryPostRepository();
         userService = mock(UserService.class);
-        postService = new PostService(postRepository, userService);
+        postService = new PostServiceImpl(postRepository, userService);
     }
 
     @Test
@@ -89,6 +97,24 @@ class PostServiceTest {
         var feed = postService.getFeedForUser(1, "date_asc");
         assertEquals(1, feed.get(0).getId());
         assertEquals(2, feed.get(1).getId());
+    }
+
+    @Test
+    void getFeedShouldRespectDateOrderDescendingExplicit() {
+        when(userService.getFollowing(1)).thenReturn(Set.of(10));
+        postRepository.save(new Post(1, 10, LocalDate.now().minusDays(2), dummyProduct(), 100, 10, false, null));
+        postRepository.save(new Post(2, 10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
+
+        var feed = postService.getFeedForUser(1, "date_desc");
+        assertEquals(2, feed.get(0).getId());
+        assertEquals(1, feed.get(1).getId());
+    }
+
+    @Test
+    void getFeedShouldReturnEmptyWhenNoPostsFromFollowed() {
+        when(userService.getFollowing(1)).thenReturn(Set.of(99));
+        var feed = postService.getFeedForUser(1, "");
+        assertTrue(feed.isEmpty());
     }
 
     @Test
