@@ -25,4 +25,3 @@ public interface PostService {
 
     List<Post> getPromoPostsByUser(int userId);
 }
-

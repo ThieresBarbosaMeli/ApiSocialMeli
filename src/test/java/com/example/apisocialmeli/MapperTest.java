@@ -31,12 +31,11 @@ class MapperTest {
     @Test
     void postMapperShouldMapPostToResponse() {
         Product product = new Product(1, "Mouse", "Periferico", "Logi", "Preto", "RGB");
-        Post post = new Post(5, 10, LocalDate.of(2024, 5, 1), product, 100, 250.0, true, 0.2);
+        Post post = new Post(10, LocalDate.of(2024, 5, 1), product, 100, 250.0, true, 0.2);
 
         PostResponseDTO dto = PostMapper.toResponse(post);
 
         assertEquals(10, dto.getUserId());
-        assertEquals(5, dto.getPostId());
         assertEquals("01-05-2024", dto.getDate());
         assertEquals("Mouse", dto.getProduct().getProductName());
         assertTrue(dto.isHasPromo());

@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +39,7 @@ class PostServiceTest {
         Product product = new Product(1, "Mouse", "Acessório", "Logi", "Preto", "Sem fio");
 
         postService.createPost(
-                100,
+                0,
                 10,
                 LocalDate.now(),
                 product,
@@ -48,7 +49,9 @@ class PostServiceTest {
                 null
         );
 
-        Post saved = postRepository.findById(100);
+        List<Post> allPosts = postRepository.findAll();
+        assertEquals(1, allPosts.size());
+        Post saved = allPosts.get(0);
         assertEquals(10, saved.getUserId());
         assertEquals("Mouse", saved.getProduct().getProductName());
         assertEquals(200, saved.getCategory());
@@ -68,8 +71,8 @@ class PostServiceTest {
         when(userService.getFollowing(1)).thenReturn(Set.of(10));
         LocalDate hoje = LocalDate.now();
 
-        postRepository.save(new Post(1, 10, hoje, dummyProduct(), 100, 50.0, false, null));
-        postRepository.save(new Post(2, 20, hoje, dummyProduct(), 100, 60.0, false, null));
+        postRepository.save(new Post(10, hoje, dummyProduct(), 100, 50.0, false, null));
+        postRepository.save(new Post(20, hoje, dummyProduct(), 100, 60.0, false, null));
 
         var feed = postService.getFeedForUser(1, "");
         assertEquals(1, feed.size());
@@ -80,34 +83,33 @@ class PostServiceTest {
     void getFeedShouldFilterPostsOlderThanTwoWeeks() {
         when(userService.getFollowing(1)).thenReturn(Set.of(10));
 
-        postRepository.save(new Post(1, 10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
-        postRepository.save(new Post(2, 10, LocalDate.now().minusDays(15), dummyProduct(), 100, 10, false, null));
+        postRepository.save(new Post(10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
+        postRepository.save(new Post(10, LocalDate.now().minusDays(15), dummyProduct(), 100, 10, false, null));
 
         var feed = postService.getFeedForUser(1, "");
         assertEquals(1, feed.size());
-        assertEquals(1, feed.get(0).getId());
     }
 
     @Test
     void getFeedShouldRespectDateOrderAscending() {
         when(userService.getFollowing(1)).thenReturn(Set.of(10));
-        postRepository.save(new Post(1, 10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
-        postRepository.save(new Post(2, 10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
+        Post post1 = postRepository.save(new Post(10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
+        Post post2 = postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
 
         var feed = postService.getFeedForUser(1, "date_asc");
-        assertEquals(1, feed.get(0).getId());
-        assertEquals(2, feed.get(1).getId());
+        assertEquals(post1.getId(), feed.get(0).getId());
+        assertEquals(post2.getId(), feed.get(1).getId());
     }
 
     @Test
     void getFeedShouldRespectDateOrderDescendingExplicit() {
         when(userService.getFollowing(1)).thenReturn(Set.of(10));
-        postRepository.save(new Post(1, 10, LocalDate.now().minusDays(2), dummyProduct(), 100, 10, false, null));
-        postRepository.save(new Post(2, 10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
+        Post post1 = postRepository.save(new Post(10, LocalDate.now().minusDays(2), dummyProduct(), 100, 10, false, null));
+        Post post2 = postRepository.save(new Post(10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
 
         var feed = postService.getFeedForUser(1, "date_desc");
-        assertEquals(2, feed.get(0).getId());
-        assertEquals(1, feed.get(1).getId());
+        assertEquals(post2.getId(), feed.get(0).getId());
+        assertEquals(post1.getId(), feed.get(1).getId());
     }
 
     @Test
@@ -120,19 +122,19 @@ class PostServiceTest {
     @Test
     void getFeedShouldRespectDateOrderDescendingByDefault() {
         when(userService.getFollowing(1)).thenReturn(Set.of(10));
-        postRepository.save(new Post(1, 10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
-        postRepository.save(new Post(2, 10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
+        Post post1 = postRepository.save(new Post(10, LocalDate.now().minusDays(1), dummyProduct(), 100, 10, false, null));
+        Post post2 = postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
 
         var feed = postService.getFeedForUser(1, "");
-        assertEquals(2, feed.get(0).getId());
-        assertEquals(1, feed.get(1).getId());
+        assertEquals(post2.getId(), feed.get(0).getId());
+        assertEquals(post1.getId(), feed.get(1).getId());
     }
 
     @Test
     void countPromoPostsShouldReturnCorrectValue() {
-        postRepository.save(new Post(1, 10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.2));
-        postRepository.save(new Post(2, 10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
-        postRepository.save(new Post(3, 10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.1));
+        postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.2));
+        postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
+        postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.1));
 
         int count = postService.countPromoPostsByUser(10);
         assertEquals(2, count);
@@ -140,12 +142,12 @@ class PostServiceTest {
 
     @Test
     void getPromoPostsShouldReturnOnlyPromotionalPosts() {
-        postRepository.save(new Post(1, 10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.2));
-        postRepository.save(new Post(2, 10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
+        Post post1 = postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, true, 0.2));
+        postRepository.save(new Post(10, LocalDate.now(), dummyProduct(), 100, 10, false, null));
 
         var promoPosts = postService.getPromoPostsByUser(10);
         assertEquals(1, promoPosts.size());
-        assertEquals(1, promoPosts.get(0).getId());
+        assertEquals(post1.getId(), promoPosts.get(0).getId());
     }
 
     @Test

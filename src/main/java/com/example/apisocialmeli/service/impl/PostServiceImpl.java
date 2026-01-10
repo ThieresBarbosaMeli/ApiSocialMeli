@@ -38,7 +38,12 @@ public class PostServiceImpl implements PostService {
                            boolean hasPromo,
                            Double discount) {
 
-        Post post = new Post(id, userId, date, product, category, price, hasPromo, discount);
+        if (hasPromo && discount == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Discount is required for promotional posts");
+        }
+
+        userService.getUserById(userId);
+        Post post = new Post(userId, date, product, category, price, hasPromo, discount);
         postRepository.save(post);
     }
 
@@ -101,7 +106,7 @@ public class PostServiceImpl implements PostService {
             case "", "date_desc" -> Comparator.comparing(Post::getDate).reversed();
             case "date_asc" -> Comparator.comparing(Post::getDate);
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Parâmetro 'order' inválido. Use date_asc ou date_desc.");
+                    ErrorMessages.INVALID_DATE_ORDER);
         };
     }
 }

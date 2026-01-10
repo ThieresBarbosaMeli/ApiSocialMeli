@@ -55,8 +55,9 @@ public class UserServiceImpl implements UserService {
         userRepository.findAll().forEach(otherUser -> {
             otherUser.removeFollower(userId);
             otherUser.removeFollowing(userId);
+            userRepository.save(otherUser);
         });
-        userRepository.delete(userId);
+        userRepository.deleteById(userId);
     }
 
     @Override
@@ -76,6 +77,8 @@ public class UserServiceImpl implements UserService {
 
         user.addFollowing(userIdToFollow);
         userToFollow.addFollower(userId);
+        userRepository.save(user);
+        userRepository.save(userToFollow);
     }
 
     @Override
@@ -95,6 +98,8 @@ public class UserServiceImpl implements UserService {
 
         user.removeFollowing(userIdToUnfollow);
         userToUnfollow.removeFollower(userId);
+        userRepository.save(user);
+        userRepository.save(userToUnfollow);
     }
 
     @Override
@@ -114,7 +119,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(int userId) {
-        User user = userRepository.findById(userId);
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     String.format("Usuário não encontrado: %d", userId));

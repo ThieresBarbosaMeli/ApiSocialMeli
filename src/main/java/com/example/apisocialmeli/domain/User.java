@@ -1,16 +1,49 @@
 package com.example.apisocialmeli.domain;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name = "users")
 public class User {
+    @Id
     private int id;
+
+    @Column(length = 40, nullable = false)
     private String name;
+
+    @Column(length = 60, nullable = false)
     private String email;
+
+    @Column(length = 60)
     private String password;
-    private Set<Integer> following;
-    private Set<Integer> followers;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_following", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "following_id")
+    private Set<Integer> following = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_followers", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "follower_id")
+    private Set<Integer> followers = new HashSet<>();
+
+    protected User() {
+    }
+
+    public User(int id) {
+        this.id = id;
+    }
 
     public User(int id, String name, String email) {
         this(id, name, email, null);
@@ -21,8 +54,6 @@ public class User {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.following = new HashSet<>();
-        this.followers = new HashSet<>();
     }
 
     public int getId() {
@@ -53,12 +84,12 @@ public class User {
         this.password = password;
     }
 
-    public Set<Integer> getFollowing() {
-        return Collections.unmodifiableSet(following);
-    }
-
     public Set<Integer> getFollowers() {
         return Collections.unmodifiableSet(followers);
+    }
+
+    public Set<Integer> getFollowing() {
+        return Collections.unmodifiableSet(following);
     }
 
     public void addFollowing(int userId) {
@@ -83,5 +114,13 @@ public class User {
 
     public void removeFollower(int followerId) {
         followers.remove(followerId);
+    }
+
+    Set<Integer> getFollowingInternal() {
+        return following;
+    }
+
+    Set<Integer> getFollowersInternal() {
+        return followers;
     }
 }

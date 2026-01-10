@@ -3,6 +3,7 @@ package com.example.apisocialmeli.controller;
 import com.example.apisocialmeli.domain.Product;
 import com.example.apisocialmeli.domain.User;
 import com.example.apisocialmeli.dto.request.CreatePostRequest;
+import com.example.apisocialmeli.dto.request.CreatePromoPostRequest;
 import com.example.apisocialmeli.service.PostService;
 import com.example.apisocialmeli.service.UserService;
 import com.example.apisocialmeli.dto.response.FollowedPostsResponseDTO;
@@ -39,30 +40,12 @@ public class PostController {
 
     @PostMapping("/publish")
     public void createPost(@Valid @RequestBody CreatePostRequest request) {
-        boolean hasPromo = Boolean.TRUE.equals(request.getHasPromo());
-        Double discount = hasPromo ? request.getDiscount() : null;
-
-        if (hasPromo && request.getDiscount() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    ErrorMessages.PROMO_REQUIRES_DISCOUNT);
-        }
-
-        if (!hasPromo && request.getDiscount() != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    ErrorMessages.DISCOUNT_ONLY_WITH_PROMO);
-        }
-
-        registerPost(request, hasPromo, discount);
+        registerPost(request);
     }
 
     @PostMapping("/promo-pub")
-    public void createPromoPost(@Valid @RequestBody CreatePostRequest request) {
-        if (request.getDiscount() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    ErrorMessages.PROMO_REQUIRES_DISCOUNT);
-        }
-
-        registerPost(request, true, request.getDiscount());
+    public void createPromoPost(@Valid @RequestBody CreatePromoPostRequest request) {
+        registerPromoPost(request);
     }
 
     @GetMapping("/promo-pub/count")
@@ -98,7 +81,7 @@ public class PostController {
         return new FollowedPostsResponseDTO(userId, posts);
     }
 
-    private void registerPost(CreatePostRequest request, boolean hasPromo, Double discount) {
+    private void registerPost(CreatePostRequest request) {
         userService.getUserById(request.getUserId());
 
         LocalDate date = LocalDate.parse(request.getDate(), DATE_FORMATTER);
@@ -113,14 +96,40 @@ public class PostController {
         );
 
         postService.createPost(
-                request.getPostId(),
+                request.getPostId() != null ? request.getPostId() : 0,
                 request.getUserId(),
                 date,
                 product,
                 request.getCategory(),
                 request.getPrice(),
-                hasPromo,
-                discount
+                request.getHasPromo(),
+                request.getDiscount()
+        );
+    }
+
+    private void registerPromoPost(CreatePromoPostRequest request) {
+        userService.getUserById(request.getUserId());
+
+        LocalDate date = LocalDate.parse(request.getDate(), DATE_FORMATTER);
+
+        Product product = new Product(
+                request.getProduct().getProductId(),
+                request.getProduct().getProductName(),
+                request.getProduct().getType(),
+                request.getProduct().getBrand(),
+                request.getProduct().getColor(),
+                request.getProduct().getNotes()
+        );
+
+        postService.createPost(
+                request.getPostId() != null ? request.getPostId() : 0,
+                request.getUserId(),
+                date,
+                product,
+                request.getCategory(),
+                request.getPrice(),
+                request.getHasPromo(),
+                request.getDiscount()
         );
     }
 

@@ -15,7 +15,7 @@ import jakarta.validation.constraints.Size;
 @JsonPropertyOrder({
         "user_id", "date", "product", "category", "price", "post_id", "has_promo", "discount"
 })
-public class CreatePostRequest {
+public class CreatePromoPostRequest {
 
     @JsonProperty("user_id")
     @Positive(message = ErrorMessages.USER_ID_POSITIVE)
@@ -41,8 +41,10 @@ public class CreatePostRequest {
 
     @JsonProperty("has_promo")
     @NotNull(message = ErrorMessages.HAS_PROMO_NOT_NULL)
-    private Boolean hasPromo = false;
+    private Boolean hasPromo;
 
+    @DecimalMin(value = "0.0", inclusive = false, message = ErrorMessages.DISCOUNT_MIN)
+    @DecimalMax(value = "1.0", message = ErrorMessages.DISCOUNT_MAX)
     private Double discount;
 
     public int getUserId() {

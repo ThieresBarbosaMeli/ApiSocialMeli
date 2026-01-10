@@ -1,14 +1,9 @@
 package com.example.apisocialmeli.repository;
 
 import com.example.apisocialmeli.domain.Post;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-public interface PostRepository {
-
-    void save(Post post);
-
-    Post findById(int id);
-
-    List<Post> findAll();
+@Repository
+public interface PostRepository extends JpaRepository<Post, Integer> {
 }

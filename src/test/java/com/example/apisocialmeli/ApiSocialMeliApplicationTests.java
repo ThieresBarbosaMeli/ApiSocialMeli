@@ -9,4 +9,5 @@ class ApiSocialMeliApplicationTests {
     @Test
     void contextLoads() {
     }
+
 }

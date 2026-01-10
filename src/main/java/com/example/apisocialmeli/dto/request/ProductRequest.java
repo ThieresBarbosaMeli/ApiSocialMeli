@@ -35,7 +35,7 @@ public class ProductRequest {
 
     @NotBlank(message = ErrorMessages.COLOR_NOT_BLANK)
     @Size(max = 15, message = ErrorMessages.COLOR_SIZE)
-    @Pattern(regexp = "[\\p{L}\\d ]+", message = ErrorMessages.COLOR_PATTERN)
+    @Pattern(regexp = "[\\p{L}\\d &]+", message = ErrorMessages.COLOR_PATTERN)
     private String color;
 
     @Size(max = 80, message = ErrorMessages.NOTES_SIZE)

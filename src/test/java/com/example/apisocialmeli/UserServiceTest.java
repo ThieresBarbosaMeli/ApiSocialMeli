@@ -89,7 +89,7 @@ class UserServiceTest {
 
         userService.updateProfile(1, "Alice Nova", "alice.nova@test.com");
 
-        User updated = userRepository.findById(1);
+        User updated = userRepository.findById(1).orElseThrow();
         assertEquals("Alice Nova", updated.getName());
         assertEquals("alice.nova@test.com", updated.getEmail());
     }
@@ -100,7 +100,7 @@ class UserServiceTest {
 
         userService.updatePassword(1, "novaSenha!");
 
-        User updated = userRepository.findById(1);
+        User updated = userRepository.findById(1).orElseThrow();
         assertEquals("novaSenha!", updated.getPassword());
     }
 
@@ -126,6 +126,8 @@ class UserServiceTest {
 
     @Test
     void whenUserTriesToFollowItself_shouldThrowException() {
+        userRepository.save(new User(1, "Alice", "alice@test.com"));
+
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
                 () -> userService.follow(1, 1)
@@ -135,10 +137,56 @@ class UserServiceTest {
 
     @Test
     void whenUserTriesToUnfollowItself_shouldThrowException() {
+        userRepository.save(new User(1, "Alice", "alice@test.com"));
+
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
                 () -> userService.unfollow(1, 1)
         );
         assertEquals("Um usuário não pode deixar de seguir a si mesmo.", ex.getReason());
+    }
+
+    @Test
+    void shouldOrderFollowersByNameAscending_T0004() {
+        User seller = new User(1, "Vendedor", "seller@test.com");
+        userRepository.save(seller);
+        userRepository.save(new User(2, "Charlie", "charlie@test.com"));
+        userRepository.save(new User(3, "Alice", "alice@test.com"));
+        userRepository.save(new User(4, "Bob", "bob@test.com"));
+
+        userService.follow(2, 1);
+        userService.follow(3, 1);
+        userService.follow(4, 1);
+
+        var followers = userService.getFollowers(1).stream()
+                .map(userService::getUserById)
+                .sorted((u1, u2) -> u1.getName().compareToIgnoreCase(u2.getName()))
+                .toList();
+
+        assertEquals("Alice", followers.get(0).getName());
+        assertEquals("Bob", followers.get(1).getName());
+        assertEquals("Charlie", followers.get(2).getName());
+    }
+
+    @Test
+    void shouldOrderFollowersByNameDescending_T0004() {
+        User seller = new User(1, "Vendedor", "seller@test.com");
+        userRepository.save(seller);
+        userRepository.save(new User(2, "Charlie", "charlie@test.com"));
+        userRepository.save(new User(3, "Alice", "alice@test.com"));
+        userRepository.save(new User(4, "Bob", "bob@test.com"));
+
+        userService.follow(2, 1);
+        userService.follow(3, 1);
+        userService.follow(4, 1);
+
+        var followers = userService.getFollowers(1).stream()
+                .map(userService::getUserById)
+                .sorted((u1, u2) -> u2.getName().compareToIgnoreCase(u1.getName()))
+                .toList();
+
+        assertEquals("Charlie", followers.get(0).getName());
+        assertEquals("Bob", followers.get(1).getName());
+        assertEquals("Alice", followers.get(2).getName());
     }
 }
