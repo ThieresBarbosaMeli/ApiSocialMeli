@@ -1,7 +1,9 @@
 package com.example.apisocialmeli;
 
 import com.example.apisocialmeli.domain.User;
+import com.example.apisocialmeli.repository.InMemoryPostRepository;
 import com.example.apisocialmeli.repository.InMemoryUserRepository;
+import com.example.apisocialmeli.repository.PostRepository;
 import com.example.apisocialmeli.repository.UserRepository;
 import com.example.apisocialmeli.service.UserService;
 import com.example.apisocialmeli.service.impl.UserServiceImpl;
@@ -15,12 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UserServiceTest {
 
     private UserRepository userRepository;
+    private PostRepository postRepository;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userRepository = new InMemoryUserRepository();
-        userService = new UserServiceImpl(userRepository);
+        postRepository = new InMemoryPostRepository();
+        userService = new UserServiceImpl(userRepository, postRepository);
     }
 
     @Test

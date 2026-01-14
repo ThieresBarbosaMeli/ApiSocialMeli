@@ -35,6 +35,12 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
     @PostMapping
     public ResponseEntity<Void> registerUser(@Valid @RequestBody CreateUserRequest request) {
         userService.register(
@@ -44,6 +50,12 @@ public class UserController {
                 request.getPassword()
         );
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> deleteAllData() {
+        userService.deleteAllData();
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{userId}")

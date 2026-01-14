@@ -2,6 +2,7 @@ package com.example.apisocialmeli.service;
 
 import com.example.apisocialmeli.domain.User;
 
+import java.util.List;
 import java.util.Set;
 
 public interface UserService {
@@ -25,5 +26,9 @@ public interface UserService {
     Set<Integer> getFollowing(int userId);
 
     User getUserById(int userId);
+
+    List<User> getAllUsers();
+
+    void deleteAllData();
 }
 

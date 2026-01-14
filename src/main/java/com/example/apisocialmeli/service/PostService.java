@@ -24,4 +24,8 @@ public interface PostService {
     int countPromoPostsByUser(int userId);
 
     List<Post> getPromoPostsByUser(int userId);
+
+    List<Post> getAllPosts();
+
+    List<Post> getAllPromoPosts();
 }

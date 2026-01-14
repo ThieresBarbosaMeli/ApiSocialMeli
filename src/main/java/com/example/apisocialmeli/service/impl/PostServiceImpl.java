@@ -99,6 +99,18 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
+    @Override
+    public List<Post> getAllPosts() {
+        return postRepository.findAll();
+    }
+
+    @Override
+    public List<Post> getAllPromoPosts() {
+        return postRepository.findAll().stream()
+                .filter(Post::isHasPromo)
+                .toList();
+    }
+
     private Comparator<Post> resolveDateOrder(String order) {
         String normalized = order == null ? "" : order.trim().toLowerCase();
 

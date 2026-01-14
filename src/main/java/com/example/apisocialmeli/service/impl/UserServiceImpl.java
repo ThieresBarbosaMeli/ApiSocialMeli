@@ -2,6 +2,7 @@ package com.example.apisocialmeli.service.impl;
 
 import com.example.apisocialmeli.domain.User;
 import com.example.apisocialmeli.exception.ErrorMessages;
+import com.example.apisocialmeli.repository.PostRepository;
 import com.example.apisocialmeli.repository.UserRepository;
 import com.example.apisocialmeli.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -14,9 +15,11 @@ import java.util.Set;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, PostRepository postRepository) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
     }
 
     @Override
@@ -125,5 +128,16 @@ public class UserServiceImpl implements UserService {
                     String.format("Usuário não encontrado: %d", userId));
         }
         return user;
+    }
+
+    @Override
+    public java.util.List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Override
+    public void deleteAllData() {
+        postRepository.deleteAll();
+        userRepository.deleteAll();
     }
 }

@@ -38,6 +38,21 @@ public class PostController {
         this.userService = userService;
     }
 
+    @GetMapping
+    public List<PostResponseDTO> getAllPosts(
+            @RequestParam(value = "user_id", required = false) Integer userId) {
+        if (userId != null) {
+            userService.getUserById(userId);
+            return postService.getPostsByUser(userId).stream()
+                    .map(PostMapper::toResponse)
+                    .toList();
+        } else {
+            return postService.getAllPosts().stream()
+                    .map(PostMapper::toResponse)
+                    .toList();
+        }
+    }
+
     @PostMapping("/publish")
     public void createPost(@Valid @RequestBody CreatePostRequest request) {
         registerPost(request);
@@ -50,21 +65,31 @@ public class PostController {
 
     @GetMapping("/promo-pub/count")
     public PromoCountResponseDTO getPromoCount(
-            @RequestParam("user_id") @Positive(message = ErrorMessages.USER_ID_POSITIVE) int userId) {
-        User user = userService.getUserById(userId);
-        int count = postService.countPromoPostsByUser(userId);
-        return new PromoCountResponseDTO(user.getId(), user.getName(), count);
+            @RequestParam(value = "user_id", required = false) Integer userId) {
+        if (userId != null) {
+            User user = userService.getUserById(userId);
+            int count = postService.countPromoPostsByUser(userId);
+            return new PromoCountResponseDTO(user.getId(), user.getName(), count);
+        } else {
+            int count = postService.getAllPromoPosts().size();
+            return new PromoCountResponseDTO(0, "Todos", count);
+        }
     }
 
     @GetMapping("/promo-pub/list")
-    public PromoPostListResponseDTO getPromoPosts(
-            @RequestParam("user_id") @Positive(message = ErrorMessages.USER_ID_POSITIVE) int userId) {
-        User user = userService.getUserById(userId);
-        List<PostResponseDTO> posts = postService.getPromoPostsByUser(userId).stream()
-                .map(PostMapper::toResponse)
-                .toList();
-
-        return new PromoPostListResponseDTO(user.getId(), user.getName(), posts);
+    public Object getPromoPosts(
+            @RequestParam(value = "user_id", required = false) Integer userId) {
+        if (userId != null) {
+            User user = userService.getUserById(userId);
+            List<PostResponseDTO> posts = postService.getPromoPostsByUser(userId).stream()
+                    .map(PostMapper::toResponse)
+                    .toList();
+            return new PromoPostListResponseDTO(user.getId(), user.getName(), posts);
+        } else {
+            return postService.getAllPromoPosts().stream()
+                    .map(PostMapper::toResponse)
+                    .toList();
+        }
     }
 
     @GetMapping("/followed/{userId}/list")
