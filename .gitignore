@@ -33,3 +33,11 @@ build/
 .vscode/
 .DS_Store
 src/.DS_Store
+
+### Documentação e Apresentação (não versionar) ###
+ROTEIRO_APRESENTACAO.md
+VALIDACAO_REQUISITOS.md
+*.postman_collection.json
+*.backup.json
+local_tools/
+scripts/
